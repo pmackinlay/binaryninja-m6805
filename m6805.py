@@ -597,10 +597,11 @@ class M6805View(BinaryView):
     def perform_is_executable(self):
         return True
 
+    # FIXME: this isn't working for rol/ror (code ref a68)?
     def get_flag_write_low_level_il(self, op, size, write_type, flag, operands, il):
         if flag == 'C' and op == LowLevelILOperation.LLIL_RLC:
-            return il.test_bit(1, operands[0], il.const(1, 7))
+            return il.test_bit(0, operands[0], il.const(1, 7))
         elif flag == 'C' and op == LowLevelILOperation.LLIL_RRC:
-            return il.test_bit(1, operands[0], il.const(1, 0))
+            return il.test_bit(0, operands[0], il.const(1, 0))
  
         return self.perform_get_flag_write_low_level_il(op, size, write_type, flag, operands, il)
