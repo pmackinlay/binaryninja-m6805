@@ -1,4 +1,4 @@
-# Motorola 6805 Architecture Plugin (v0.1)
+# Motorola 6805 Architecture Plugin (v0.2)
 Author: **Patrick Mackinlay**
 
 _A disassembler, lifter and basic loader for the Motorola 6805 architecture._

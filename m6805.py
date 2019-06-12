@@ -6,10 +6,10 @@ import binaryninja.enum as enum
 
 from binaryninja.architecture import Architecture
 from binaryninja.binaryview import BinaryView
-from binaryninja.enums import (BranchType, Endianness, InstructionTextTokenType, LowLevelILOperation, LowLevelILFlagCondition, FlagRole, SegmentFlag, SymbolType, SectionSemantics)
+from binaryninja.enums import BranchType, Endianness, InstructionTextTokenType, LowLevelILOperation, LowLevelILFlagCondition, FlagRole, SegmentFlag, SymbolType, SectionSemantics
 from binaryninja.function import RegisterInfo, InstructionInfo, InstructionTextToken
 from binaryninja.log import log_error
-from binaryninja.lowlevelil import LowLevelILInstruction, LowLevelILLabel, ILRegister, LLIL_TEMP
+from binaryninja.lowlevelil import LowLevelILInstruction, LowLevelILLabel
 from binaryninja.platform import Platform
 from binaryninja.types import Symbol, Type
 
@@ -51,7 +51,7 @@ class M6805(Architecture):
         'C', # carry/borrow
         'INT', # interrupt
     ]
-    flag_write_types = ['NZ', 'NZC', 'HNZC']
+    flag_write_types = ['C', 'NZ', 'NZC', 'HNZC']
     flag_roles = {
         'H': FlagRole.HalfCarryFlagRole,
         'I': FlagRole.SpecialFlagRole,
@@ -61,6 +61,7 @@ class M6805(Architecture):
         'INT': FlagRole.SpecialFlagRole,
     }
     flags_written_by_flag_write_type = {
+        'C': ['C'],
         'NZ': ['N', 'Z'],
         'NZC': ['N', 'Z', 'C'],
         'HNZC': ['H', 'N', 'Z', 'C'],
@@ -77,23 +78,23 @@ class M6805(Architecture):
     }
 
     instructions = [
-        # 0x00-0x0f: Bit Manipulation BTB
-        [('BRSET', 3, M6805_AddressMode.BTB), ['0', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.test_bit(1, il.load(1, m), il.const(1, 0)))],
-        [('BRCLR', 3, M6805_AddressMode.BTB), ['0', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.not_expr(0, il.test_bit(1, il.load(1, m), il.const(1, 0))))],
-        [('BRSET', 3, M6805_AddressMode.BTB), ['1', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.test_bit(1, il.load(1, m), il.const(1, 1)))],
-        [('BRCLR', 3, M6805_AddressMode.BTB), ['1', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.not_expr(0, il.test_bit(1, il.load(1, m), il.const(1, 1))))],
-        [('BRSET', 3, M6805_AddressMode.BTB), ['2', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.test_bit(1, il.load(1, m), il.const(1, 2)))],
-        [('BRCLR', 3, M6805_AddressMode.BTB), ['2', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.not_expr(0, il.test_bit(1, il.load(1, m), il.const(1, 2))))],
-        [('BRSET', 3, M6805_AddressMode.BTB), ['3', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.test_bit(1, il.load(1, m), il.const(1, 3)))],
-        [('BRCLR', 3, M6805_AddressMode.BTB), ['3', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.not_expr(0, il.test_bit(1, il.load(1, m), il.const(1, 3))))],
-        [('BRSET', 3, M6805_AddressMode.BTB), ['4', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.test_bit(1, il.load(1, m), il.const(1, 4)))],
-        [('BRCLR', 3, M6805_AddressMode.BTB), ['4', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.not_expr(0, il.test_bit(1, il.load(1, m), il.const(1, 4))))],
-        [('BRSET', 3, M6805_AddressMode.BTB), ['5', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.test_bit(1, il.load(1, m), il.const(1, 5)))],
-        [('BRCLR', 3, M6805_AddressMode.BTB), ['5', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.not_expr(0, il.test_bit(1, il.load(1, m), il.const(1, 5))))],
-        [('BRSET', 3, M6805_AddressMode.BTB), ['6', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.test_bit(1, il.load(1, m), il.const(1, 6)))],
-        [('BRCLR', 3, M6805_AddressMode.BTB), ['6', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.not_expr(0, il.test_bit(1, il.load(1, m), il.const(1, 6))))],
-        [('BRSET', 3, M6805_AddressMode.BTB), ['7', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.test_bit(1, il.load(1, m), il.const(1, 7)))],
-        [('BRCLR', 3, M6805_AddressMode.BTB), ['7', 'DIR', 'REL'], lambda self, il, m, t: M6805.cond_branch(il, 3, t, il.not_expr(0, il.test_bit(1, il.load(1, m), il.const(1, 7))))],
+        # 0x00-0x0f: Bit Test Branch BTB
+        [('BRSET', 3, M6805_AddressMode.BTB), ['0', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 0) ],
+        [('BRCLR', 3, M6805_AddressMode.BTB), ['0', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 0, True) ],
+        [('BRSET', 3, M6805_AddressMode.BTB), ['1', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 1) ],
+        [('BRCLR', 3, M6805_AddressMode.BTB), ['1', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 1, True) ],
+        [('BRSET', 3, M6805_AddressMode.BTB), ['2', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 2) ],
+        [('BRCLR', 3, M6805_AddressMode.BTB), ['2', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 2, True) ],
+        [('BRSET', 3, M6805_AddressMode.BTB), ['3', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 3) ],
+        [('BRCLR', 3, M6805_AddressMode.BTB), ['3', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 3, True) ],
+        [('BRSET', 3, M6805_AddressMode.BTB), ['4', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 4) ],
+        [('BRCLR', 3, M6805_AddressMode.BTB), ['4', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 4, True) ],
+        [('BRSET', 3, M6805_AddressMode.BTB), ['5', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 5) ],
+        [('BRCLR', 3, M6805_AddressMode.BTB), ['5', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 5, True) ],
+        [('BRSET', 3, M6805_AddressMode.BTB), ['6', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 6) ],
+        [('BRCLR', 3, M6805_AddressMode.BTB), ['6', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 6, True) ],
+        [('BRSET', 3, M6805_AddressMode.BTB), ['7', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 7) ],
+        [('BRCLR', 3, M6805_AddressMode.BTB), ['7', 'DIR', 'REL'], lambda self, il, m, t: M6805.bit_test_branch(il, 3, t, m, 7, True) ],
 
         # 0x10-0x1f: Bit Manipulation BSC
         [('BSET', 2, M6805_AddressMode.BSC), ['0', 'DIR'], lambda self, il, m: il.store(1, m, il.or_expr(1, il.load(1, m), il.const(1, 0x01)))],
@@ -122,13 +123,13 @@ class M6805(Architecture):
         [('BCS', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag_condition(LowLevelILFlagCondition.LLFC_ULT))],
         [('BNE', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag_condition(LowLevelILFlagCondition.LLFC_NE))],
         [('BEQ', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag_condition(LowLevelILFlagCondition.LLFC_E))],
-        [('BHCC', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.not_expr(0, il.flag('H')))],
+        [('BHCC', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag('H'), True)],
         [('BHCS', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag('H'))],
         [('BPL', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag_condition(LowLevelILFlagCondition.LLFC_POS))],
         [('BMI', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag_condition(LowLevelILFlagCondition.LLFC_NEG))],
-        [('BMC', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.not_expr(0, il.flag('I')))],
+        [('BMC', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag('I'), True)],
         [('BMS', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag('I'))],
-        [('BIL', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.not_expr(0, il.flag('INT')))],
+        [('BIL', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag('INT'), True)],
         [('BIH', 2, M6805_AddressMode.REL), ['REL'], lambda self, il, t: M6805.cond_branch(il, 2, t, il.flag('INT'))],
 
         # 0x30-0x3f: Read-Modify-Write DIR
@@ -378,7 +379,7 @@ class M6805(Architecture):
         il.append(il.jump(target))
 
     @staticmethod
-    def cond_branch(il, length, target, cond):
+    def bit_test_branch(il, length, target, addr, bit, invert = False):
         # try to find a label for the branch target
         if isinstance(target, LowLevelILInstruction) and target.operation in [LowLevelILOperation.LLIL_CONST, LowLevelILOperation.LLIL_CONST_PTR]:
             taken_label = il.get_label_for_address(il.arch, target.operand[0].value)
@@ -399,7 +400,47 @@ class M6805(Architecture):
             untaken_found = False
 
         # generate the conditional branch LLIL
-        il.append(il.if_expr(cond, taken_label, untaken_label))
+        il.append(il.rotate_right(1, il.load(1, addr), il.const(1, bit + 1), 'C'))
+        if not invert:
+            il.append(il.if_expr(il.flag('C'), taken_label, untaken_label))
+        else:
+            il.append(il.if_expr(il.flag('C'), untaken_label, taken_label))
+
+        # generate a jump to the branch target if a label couldn't be found
+        if not taken_found:
+            il.mark_label(taken_label)
+            il.append(il.jump(target))
+
+        # generate a label for the untaken branch
+        if not untaken_found:
+            il.mark_label(untaken_label)
+
+    @staticmethod
+    def cond_branch(il, length, target, cond, invert = False):
+        # try to find a label for the branch target
+        if isinstance(target, LowLevelILInstruction) and target.operation in [LowLevelILOperation.LLIL_CONST, LowLevelILOperation.LLIL_CONST_PTR]:
+            taken_label = il.get_label_for_address(il.arch, target.operand[0].value)
+        else:
+            taken_label = None
+
+        # create taken target
+        taken_found = True
+        if taken_label is None:
+            taken_label = LowLevelILLabel()
+            taken_found = False
+
+        # create untaken target
+        untaken_found = True
+        untaken_label = il.get_label_for_address(il.arch, il.current_address + length)
+        if untaken_label is None:
+            untaken_label = LowLevelILLabel()
+            untaken_found = False
+
+        # generate the conditional branch LLIL
+        if not invert:
+            il.append(il.if_expr(cond, taken_label, untaken_label))
+        else:
+            il.append(il.if_expr(cond, untaken_label, taken_label))
 
         # generate a jump to the branch target if a label couldn't be found
         if not taken_found:
@@ -558,7 +599,7 @@ class M6805View(BinaryView):
             self.add_auto_section('.ram', 64, 64, SectionSemantics.ReadWriteDataSectionSemantics)
 
             # remaining bytes are ROM
-            self.add_auto_segment(128, length - 128, 128, length - 128, SegmentFlag.SegmentContainsCode | SegmentFlag.SegmentReadable)
+            self.add_auto_segment(128, length - 128, 128, length - 128, SegmentFlag.SegmentContainsData | SegmentFlag.SegmentContainsCode | SegmentFlag.SegmentReadable | SegmentFlag.SegmentExecutable)
             self.add_auto_section('.rom', 128, length - 128, SectionSemantics.ReadOnlyCodeSectionSemantics)
 
             vectors = struct.unpack('>4H', self.parent_view.read(length - 8, 8))
