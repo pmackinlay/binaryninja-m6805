@@ -558,10 +558,10 @@ class M6805View(BinaryView):
             self.add_auto_section('.ram', 64, 64, SectionSemantics.ReadWriteDataSectionSemantics)
 
             # remaining bytes are ROM
-            self.add_auto_segment(128, 3968, 128, 3968, SegmentFlag.SegmentContainsCode | SegmentFlag.SegmentReadable)
-            self.add_auto_section('.rom', 128, 3968, SectionSemantics.ReadOnlyCodeSectionSemantics)
+            self.add_auto_segment(128, length - 128, 128, length - 128, SegmentFlag.SegmentContainsCode | SegmentFlag.SegmentReadable)
+            self.add_auto_section('.rom', 128, length - 128, SectionSemantics.ReadOnlyCodeSectionSemantics)
 
-            vectors = struct.unpack('>4H', self.parent_view.read(4088, 8))
+            vectors = struct.unpack('>4H', self.parent_view.read(length - 8, 8))
             self.add_entry_point(vectors[3])
 
             # entry points
